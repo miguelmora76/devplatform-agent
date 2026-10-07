@@ -1,0 +1,17 @@
+[project]
+name = "devplatform-agent"
+version = "0.1.0"
+description = "Sample: a tool-calling agent with a planning loop, human approval and behavior evals, on top of an MCP server"
+requires-python = ">=3.12"
+dependencies = ["anthropic[mcp]>=0.116"]
+
+[dependency-groups]
+dev = ["pytest>=8", "pytest-asyncio>=0.24"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+pythonpath = ["."]
+
+[tool.uv]
+package = false

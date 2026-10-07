@@ -1,0 +1,63 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      live:
+        description: "Also run the live eval against Claude (needs the ANTHROPIC_API_KEY secret; spends tokens)"
+        type: boolean
+        default: false
+
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: miguelmora76/mcp-devplatform-guardrails
+          path: mcp-devplatform-guardrails
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: mcp-devplatform-guardrails/.nvmrc
+      - run: npm ci && npm run build
+        working-directory: mcp-devplatform-guardrails
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+      - name: Tests (real MCP server, scripted model)
+        run: make test
+        env:
+          GUARDRAILS_SERVER: ${{ github.workspace }}/mcp-devplatform-guardrails/dist/bin/server.js
+      - name: Eval controls
+        run: make eval && make eval-negative
+        env:
+          GUARDRAILS_SERVER: ${{ github.workspace }}/mcp-devplatform-guardrails/dist/bin/server.js
+
+  live:
+    if: github.event_name == 'workflow_dispatch' && inputs.live
+    needs: offline
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: miguelmora76/mcp-devplatform-guardrails
+          path: mcp-devplatform-guardrails
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: mcp-devplatform-guardrails/.nvmrc
+      - run: npm ci && npm run build
+        working-directory: mcp-devplatform-guardrails
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+      - run: make eval-live
+        env:
+          GUARDRAILS_SERVER: ${{ github.workspace }}/mcp-devplatform-guardrails/dist/bin/server.js
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: live-eval-results
+          path: evals/results/live.json
