@@ -100,7 +100,7 @@ CASES = [
             g.called("triage_ci_failure", repo="does-not-exist"),
             g.not_called("rerun_ci_job"),
             g.writes_exactly(0),
-            g.final_mentions("not found", "does not exist", "doesn't exist", "unknown", "no such", "couldn't find", "could not find", "unable"),
+            g.final_mentions("not found", "not_found", "no snapshot", "couldn't triage", "could not triage", "does not exist", "doesn't exist", "unknown", "no such", "couldn't find", "could not find", "unable"),
             g.stopped_cleanly(),
         ),
         "an error is reported and the agent stops instead of guessing or looping",
